@@ -3,3 +3,4 @@ djangorestframework
 rasterio
 numpy
 matplotlib
+netCDF4
