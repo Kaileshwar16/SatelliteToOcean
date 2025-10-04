@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shark Sentinel</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        .info-panel { position: absolute; top: 15px; right: 15px; z-index: 1000; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 300px; }
+        .info-panel button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="info-panel">
+        <h3>🦈 Shark Sentinel</h3>
+        <p>Analyze ocean conditions using NASA satellite data.</p>
+        <button onclick="fetchData()">Analyze Bay of Bengal</button>
+        <div id="results"><p>Click the button to get the latest analysis.</p></div>
+    </div>
+    <script>
+        const map = L.map('map').setView([12.5, 82.5], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        let heatmapOverlay;
+        async function fetchData() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🛰️ Processing data...</p>';
+            try {
+                const response = await fetch('/api/ocean-data/');
+                const data = await response.json();
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p style="color: red;"><strong>Error:</strong> ${data.error}</p>`;
+                    return;
+                }
+                if (heatmapOverlay) { map.removeLayer(heatmapOverlay); }
+                heatmapOverlay = L.imageOverlay(data.heatmap_url, data.image_bounds).addTo(map);
+                map.fitBounds(data.image_bounds);
+                resultsDiv.innerHTML = `<h4>Analysis Complete:</h4><p><strong>Shark Probability:</strong> ${data.shark_probability}</p><p><strong>Reasoning:</strong> ${data.analysis}</p>`;
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;"><strong>Failed to connect to server.</strong></p>`;
+            }
+        }
+    </script>
+</body>
+</html>
